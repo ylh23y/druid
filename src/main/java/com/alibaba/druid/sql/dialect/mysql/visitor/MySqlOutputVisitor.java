@@ -318,6 +318,10 @@ public class MySqlOutputVisitor extends SQLASTOutputVisitor implements MySqlASTV
             print0(ucase ? " SORTED" : " sorted");
         }
 
+        if (x.isVirtual()) {
+            print0(ucase ? " VIRTUAL" : " virtual");
+        }
+
         this.parameterized = parameterized;
         return false;
     }
@@ -2592,7 +2596,22 @@ public class MySqlOutputVisitor extends SQLASTOutputVisitor implements MySqlASTV
 
     @Override
     public boolean visit(MySqlLockTableStatement x) {
-        print0(ucase ? "LOCK TABLES " : "lock tables ");
+        print0(ucase ? "LOCK TABLES" : "lock tables");
+        List<MySqlLockTableStatement.Item> items = x.getItems();
+        if(items.size() > 0) {
+            print(' ');
+            printAndAccept(items, ", ");
+        }
+        return false;
+    }
+
+    @Override
+    public void endVisit(MySqlLockTableStatement x) {
+
+    }
+
+    @Override
+    public boolean visit(MySqlLockTableStatement.Item x) {
         x.getTableSource().accept(this);
         if (x.getLockType() != null) {
             print(' ');
@@ -2607,7 +2626,7 @@ public class MySqlOutputVisitor extends SQLASTOutputVisitor implements MySqlASTV
     }
 
     @Override
-    public void endVisit(MySqlLockTableStatement x) {
+    public void endVisit(MySqlLockTableStatement.Item x) {
 
     }
 

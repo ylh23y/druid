@@ -274,6 +274,22 @@ public class SQLSelectParser extends SQLParser {
 
         parseFetchClause(queryBlock);
 
+        if (lexer.token() == Token.FOR) {
+            lexer.nextToken();
+            accept(Token.UPDATE);
+
+            queryBlock.setForUpdate(true);
+
+            if (lexer.identifierEquals(FnvHash.Constants.NO_WAIT) || lexer.identifierEquals(FnvHash.Constants.NOWAIT)) {
+                lexer.nextToken();
+                queryBlock.setNoWait(true);
+            } else if (lexer.identifierEquals(FnvHash.Constants.WAIT)) {
+                lexer.nextToken();
+                SQLExpr waitTime = this.exprParser.primary();
+                queryBlock.setWaitTime(waitTime);
+            }
+        }
+
         return queryRest(queryBlock, acceptUnion);
     }
 
@@ -450,6 +466,7 @@ public class SQLSelectParser extends SQLParser {
                     }
 
                     where = this.exprParser.andRest(where);
+                    where = this.exprParser.xorRest(where);
                     where = this.exprParser.orRest(where);
                 } else {
                     identExpr = this.exprParser.primaryRest(identExpr);
@@ -471,6 +488,29 @@ public class SQLSelectParser extends SQLParser {
             }
 
             queryBlock.setWhere(where);
+        }
+    }
+
+    protected void parseWindow(SQLSelectQueryBlock queryBlock) {
+        if (!(lexer.identifierEquals(FnvHash.Constants.WINDOW) || lexer.token == Token.WINDOW)) {
+            return;
+        }
+
+        lexer.nextToken();
+
+        for (;;) {
+            SQLName name = this.exprParser.name();
+            accept(Token.AS);
+            SQLOver over = new SQLOver();
+            this.exprParser.over(over);
+            queryBlock.addWindow(new SQLWindow(name, over));
+
+            if (lexer.token == Token.COMMA) {
+                lexer.nextToken();
+                continue;
+            }
+
+            break;
         }
     }
     
@@ -972,6 +1012,7 @@ public class SQLSelectParser extends SQLParser {
         if (lexer.token == Token.FETCH) {
             lexer.nextToken();
             if (lexer.token == Token.FIRST
+                    || lexer.token == Token.NEXT
                     || lexer.identifierEquals(FnvHash.Constants.NEXT)) {
                 lexer.nextToken();
             } else {

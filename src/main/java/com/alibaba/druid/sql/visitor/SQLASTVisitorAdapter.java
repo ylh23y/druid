@@ -1990,6 +1990,24 @@ public class SQLASTVisitorAdapter implements SQLASTVisitor {
 
     }
 
+    @Override
+    public boolean visit(SQLWindow x) {
+        return true;
+    }
+
+    public void endVisit(SQLWindow x) {
+
+    }
+
+    @Override
+    public boolean visit(SQLDumpStatement x) {
+        return true;
+    }
+
+    public void endVisit(SQLDumpStatement x) {
+
+    }
+
     public final boolean isEnabled(VisitorFeature feature) {
         return VisitorFeature.isEnabled(this.features, feature);
     }
